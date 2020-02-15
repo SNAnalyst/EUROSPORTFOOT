@@ -1,6 +1,7 @@
 library(rvest)
 library(tidyverse)
 library(shinythemes)
+library(ggthemes)
 
 
 
@@ -76,14 +77,42 @@ Eredivisie <- Eredivisie_link %>% read_html() %>% html_table() %>% pluck(1)
 Eredivisie$ligue <- "Eredivisie"
 
 
+# Champions League
+
+CL_link <- "https://www.topscorersfootball.com/champions-league"
+
+CL <- CL_link %>% read_html() %>% html_table() %>% pluck(1)
+
+CL$ligue <- "Champions League"
+
 
 # Champions League
 
+EL_link <- "https://www.topscorersfootball.com/europa-league"
+
+EL <- EL_link %>% read_html() %>% html_table() %>% pluck(1)
+
+EL$ligue <- "Europa Ligue"
 
 
 
+# Super League Greece
 
 
+SLG_link <- "https://www.topscorersfootball.com/superleague"
+
+SLG <- SLG_link %>% read_html() %>% html_table() %>% pluck(1)
+
+SLG$ligue <- "Super League Greece"
+
+
+# Swiss Super League
+
+SSL_link <- "https://www.topscorersfootball.com/super-league"
+
+SSL <- SSL_link %>% read_html() %>% html_table() %>% pluck(1)
+
+SSL$ligue <- "Swiss Super League"
 
 
 
@@ -98,16 +127,19 @@ Final <- rbind(eng,
     Bundesliga, 
     LigaPortugal, 
     SuperLig,
-    Eredivisie)
+    Eredivisie, 
+    CL, 
+    EL, 
+    SLG, 
+    SSL)
 
 Final <- Final[, -1]
-
 
 
 ################### Shiny App #####################################
 
 
-ui <- shinyUI(fluidPage(theme = shinytheme("cyborg"),
+ui <- shinyUI(fluidPage(theme = shinytheme("yeti"),
     
     
 
@@ -120,38 +152,37 @@ ui <- shinyUI(fluidPage(theme = shinytheme("cyborg"),
         tabPanel(
             "Ranking",
             titlePanel("Scorer Ranking"),
-            sidebarLayout(
                 
-                sidebarPanel(
+            fluidRow(
                     
+                column(12, 
                     selectInput(inputId = "ch_ligue", 
-                        label = "Choose a league", 
-                        choices = sort(unique(Final$ligue)))
-                    
-                    ), 
-                    
-                    mainPanel(
-                        
-                        tableOutput("scorer_ranking")
+                    label = "Choose a league", 
+                    choices = sort(unique(Final$ligue)), width = "400px"
                         
                         )
+                    
                     )
+                    
+                    
+                    ), 
             
-            
-            
-            
-            
+            fluidRow(
+                
+                column(5, tableOutput("scorer_ranking")), 
+                column(7, plotOutput("scorer_plot"))
+                
+                
+                
             )
         
         
         )
     
     
-    )
+    )))
     
     
-    
-    )
 
                     
                     
@@ -190,8 +221,18 @@ server <- function(input, output) {
         
     })
         
+    
+    output$scorer_plot <- renderPlot({
+    
+    ggplot(df(), aes(reorder(Player, Goals), Goals)) +
+            geom_col(col = "red1", fill = "lavenderblush", 
+                width=0.4, position = position_dodge(width=0.5))  +
+            coord_flip() +
+            xlab("") +
+            theme_fivethirtyeight()
+
         
-        
+    })
     
     
 

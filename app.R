@@ -1,5 +1,7 @@
 library(rvest)
 library(tidyverse)
+library(shinythemes)
+
 
 
 # Premier ligue 
@@ -44,20 +46,71 @@ Bundesliga <- Bundesliga_link %>% read_html() %>% html_table() %>% pluck(1)
 
 Bundesliga$ligue <- "Bundesliga"
 
+# Liga Portugal 
 
-# Final Data
 
-Final <- rbind(eng, liga, lig1, serieA, Bundesliga)
+LigaPortugal_link <- "https://www.topscorersfootball.com/primeira-liga"
+
+LigaPortugal <- LigaPortugal_link %>% read_html() %>% html_table() %>% pluck(1)
+
+LigaPortugal$ligue <- "Liga Portugal"
+
+
+
+# Süper Lig
+
+
+SuperLig_link <- "https://www.topscorersfootball.com/super-lig"
+
+SuperLig <- SuperLig_link %>% read_html() %>% html_table() %>% pluck(1)
+
+SuperLig$ligue <- "Süper Lig"
+
+
+# Eredivisie 
+
+Eredivisie_link <- "https://www.topscorersfootball.com/eredivisie"
+
+Eredivisie <- Eredivisie_link %>% read_html() %>% html_table() %>% pluck(1)
+
+Eredivisie$ligue <- "Eredivisie"
+
+
+
+# Champions League
+
+
+
+
+
+
+
+
+
+
+
+# Final Data ##############################################
+
+Final <- rbind(eng, 
+    liga, 
+    lig1, 
+    serieA, 
+    Bundesliga, 
+    LigaPortugal, 
+    SuperLig,
+    Eredivisie)
 
 Final <- Final[, -1]
+
 
 
 ################### Shiny App #####################################
 
 
-ui <- shinyUI(fluidPage(
+ui <- shinyUI(fluidPage(theme = shinytheme("cyborg"),
     
     
+
     titlePanel(strong("Soccer App")),
     
     tabsetPanel(
@@ -73,7 +126,7 @@ ui <- shinyUI(fluidPage(
                     
                     selectInput(inputId = "ch_ligue", 
                         label = "Choose a league", 
-                        choices = unique(Final$ligue))
+                        choices = sort(unique(Final$ligue)))
                     
                     ), 
                     
@@ -82,11 +135,23 @@ ui <- shinyUI(fluidPage(
                         tableOutput("scorer_ranking")
                         
                         )
-                    
-                    
-                    
-                    
-                    )))))
+                    )
+            
+            
+            
+            
+            
+            )
+        
+        
+        )
+    
+    
+    )
+    
+    
+    
+    )
 
                     
                     
@@ -104,6 +169,12 @@ server <- function(input, output) {
         data <- Final %>% filter(ligue == input$ch_ligue)
         
         data <- data[, -5]
+        
+
+        data <- data %>% 
+            mutate(rank = dense_rank(desc(Goals)))
+        
+        data <- data %>% select(rank, everything())
         
         return(data)
         

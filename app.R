@@ -2,7 +2,7 @@ library(rvest)
 library(tidyverse)
 library(shinythemes)
 library(ggthemes)
-
+library(maps)
 
 
 # Premier ligue 
@@ -136,6 +136,24 @@ Final <- rbind(eng,
 Final <- Final[, -1]
 
 
+# Map Data ###############################################
+
+world <- map_data("world")
+
+world <- world %>% rename(Nationality = region)
+
+
+Total_Goals <- Final %>% group_by(Nationality) %>% 
+    summarise(TotalG = sum(Goals)) %>% 
+    arrange(desc(TotalG)) %>% 
+    as.data.frame()
+
+
+
+
+Final_map <- left_join(world, Total_Goals, by = "Nationality")
+
+
 ################### Shiny App #####################################
 
 
@@ -177,20 +195,42 @@ ui <- shinyUI(fluidPage(theme = shinytheme("yeti"),
             )
         
         
+        ), 
+        
+    
+    tabPanel(
+        
+        
+        "Map", 
+        
+        titlePanel("Scorer Map"), 
+        
+        fluidRow(
+            
+            column(12, plotOutput("scorer_map") )
+            
+            
+        ), 
+        
+        fluidRow(
+            
+            
+            column(12, plotOutput("scorer_map_plot"))
+            
         )
+        
+        
+        
+        
+    )
     
     
     )))
-    
-    
 
-                    
-                    
-                    
-                    
-                    
-                    
-                    
+
+
+
+
 
 server <- function(input, output) {
     
@@ -234,6 +274,40 @@ server <- function(input, output) {
         
     })
     
+    
+    
+    output$scorer_map <- renderPlot({
+        
+        
+        ggplot(Final_map, aes(x=long, y=lat, group=group, fill = TotalG)) +
+            geom_polygon(colour="black") +
+            labs(fill = '') +
+            theme_void()
+        
+        
+        
+        
+    })
+    
+    
+  
+    
+    output$scorer_map_plot <- renderPlot({
+        
+        
+        ggplot(Total_Goals, aes(reorder(Nationality, TotalG), TotalG))+
+            geom_col(col = "lightblue", fill = "darkred", 
+                width=0.4, position = position_dodge(width=0.5))+
+            coord_flip()+
+            theme_replace()+
+            xlab("")+
+            ylab("") 
+
+        
+    })
+    
+    
+
     
 
 }

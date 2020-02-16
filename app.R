@@ -3,8 +3,7 @@ library(tidyverse)
 library(shinythemes)
 library(ggthemes)
 library(maps)
-
-
+library(ggdark)
 # Premier ligue 
 link_eng <- "https://www.topscorersfootball.com/premier-league"
 
@@ -120,7 +119,7 @@ SSL$ligue <- "Swiss Super League"
 
 # Final Data ##############################################
 
-Final <- rbind(eng, 
+Final0 <- rbind(eng, 
     liga, 
     lig1, 
     serieA, 
@@ -133,10 +132,10 @@ Final <- rbind(eng,
     SLG, 
     SSL)
 
-Final <- Final[, -1]
+Final <- Final0[, -1]
 
 
-# Map Data ###############################################
+######## Map Data ###############################################
 
 world <- map_data("world")
 
@@ -154,10 +153,22 @@ Total_Goals <- Final %>% group_by(Nationality) %>%
 Final_map <- left_join(world, Total_Goals, by = "Nationality")
 
 
+
+#### Ligue Scorer statistics ###################################
+
+
+
+Stats_ligue <- Final0 %>% group_by(ligue) %>% 
+  summarise(mean = round(mean(Goals), 2),
+    median = median(Goals), 
+    sum = sum(Goals)) %>% 
+  arrange(desc(sum))
+
+
 ################### Shiny App #####################################
 
 
-ui <- shinyUI(fluidPage(theme = shinytheme("yeti"),
+ui <- shinyUI(fluidPage(theme = shinytheme("cyborg"),
     
     
 
@@ -222,10 +233,26 @@ ui <- shinyUI(fluidPage(theme = shinytheme("yeti"),
         
         
         
-    )
+    ),
+      
+      
+      tabPanel(
+        
+        
+        "Score Ligue", 
+        
+        titlePanel("Score Statistics"), 
+        
+        fluidRow(
+          
+          column(4, tableOutput("scorer_ligue")), 
+          column(8, plotOutput("scorer_ligue_plot"))
+          
+          
+      )
     
     
-    )))
+    ))))
 
 
 
@@ -281,6 +308,7 @@ server <- function(input, output) {
         
         ggplot(Final_map, aes(x=long, y=lat, group=group, fill = TotalG)) +
             geom_polygon(colour="black") +
+            scale_fill_viridis_c(option = "viridis") +
             labs(fill = '') +
             theme_void()
         
@@ -308,7 +336,32 @@ server <- function(input, output) {
     
     
 
+    output$scorer_ligue <- renderTable({
+      
+      
+      Stats_ligue
+      
+      
+      
+    })
     
+    
+    output$scorer_ligue_plot <- renderPlot({
+      
+      
+      
+      ggplot(Stats_ligue, aes(reorder(ligue, sum), sum)) +
+        geom_col(fill = "pink", col = "darkred") +
+        labs(title = "Total Best Scorers Goals per ligue",
+          x ="", y = "") +
+        coord_flip() +
+        dark_theme_dark(base_size = 16)
+      
+     
+      
+      
+      
+    })
 
 }
 
